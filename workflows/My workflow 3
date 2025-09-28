@@ -1,0 +1,307 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -352
+      ],
+      "id": "f1d0e44f-d407-4358-9890-fe52e9790bd5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n    \"result\": [\n        \"E16:P26\",\n        \"E31:P41\",\n        \"E46:P56\",\n        \"E61:P71\",\n        \"T16:AE26\",\n        \"T31:AE41\",\n        \"T46:AE56\",\n        \"T61:AE71\",\n        \"AG16:AR26\",\n        \"AG31:AR41\",\n        \"AG46:AR56\",\n        \"AG61:AR71\",\n        \"AT16:BE26\",\n        \"AT31:BE41\",\n        \"AT46:BE56\",\n        \"AT61:BE71\"\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -352
+      ],
+      "id": "f7e16467-5143-4a71-bdee-0a6ce688f2a9",
+      "name": "Edit Fields",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// This is the input you want to generate\nconst ranges = $input.first().json.result\n\n\n// This is the object that will hold the final output\nconst outputObject = {};\n\n// We want a single key 'ranges' with the array as its value\noutputObject.ranges = ranges;\n// Return a single object item\nreturn [{\n    json: outputObject\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -352
+      ],
+      "id": "79a69ae3-5ff1-4d6c-b2af-da9124a20777",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "ranges",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -352
+      ],
+      "id": "145bc1e8-44c4-49b0-860e-182f84cac8f3",
+      "name": "Split Out",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ybvbz_FWrYqXQrgPuqcpxixObohz2-bR706xy68eyTM",
+          "mode": "list",
+          "cachedResultName": "สำเนาของ PM_66_Timeline_2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ybvbz_FWrYqXQrgPuqcpxixObohz2-bR706xy68eyTM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=[Team{{ $('Webhook1').item.json.body }}]",
+          "mode": "name"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "={{ $json.ranges }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        784,
+        -352
+      ],
+      "id": "790d4613-654a-4713-8082-6fd04482bf46",
+      "name": "Pull by Range",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VLHxNrEZtmHeXp80",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\nconst allTasks = inputItems.map(item => item.json);\n\n// Use a Map to track the latest status and data for each unique task ID\nconst latestTasks = new Map();\nfor (const task of allTasks) {\n    if (task.ID && task.ID.trim() !== '') {\n        latestTasks.set(task.ID.trim(), task);\n    }\n}\n\n// Initialize summary variables\nlet totalTasks = 0;\nlet totalCompleted = 0;\nlet totalInProgress = 0;\nlet totalMove = 0;\nlet totalEstimatedHours = 0;\nlet totalHoursSpent = 0;\nconst performancePerPerson = {};\n\n// Iterate over the latest tasks to get insights\nfor (const [taskId, task] of latestTasks) {\n    const assignedTo = task.Assigned ? task.Assigned.trim() : 'Unassigned';\n    const status = task.STATUS ? task.STATUS.trim().toLowerCase() : 'todo';\n\n    // Group tasks by status first\n    if (status === 'done' || status === 'complete') {\n        totalCompleted++;\n    } else if (status === 'inprogress') {\n        totalInProgress++;\n    } else if (status === 'move') {\n        totalMove++;\n    }\n\n    // Only count as a \"real\" task if the status is NOT 'move'\n    if (status !== 'move') {\n        totalTasks++;\n    }\n\n    // Sum up estimated and spent hours\n    totalEstimatedHours += (task['Initial Estimate'] || 0);\n    const dailyHoursKeys = Object.keys(task).filter(key => key.startsWith(\"Day \"));\n    const hoursSpentPerTask = dailyHoursKeys.reduce((sum, key) => sum + (task[key] || 0), 0);\n    totalHoursSpent += hoursSpentPerTask;\n\n    // Summarize performance per person\n    if (assignedTo !== 'Unassigned') {\n        if (!performancePerPerson[assignedTo]) {\n            performancePerPerson[assignedTo] = {\n                tasks_assigned: 0,\n                hours_spent: 0,\n                estimated_hours: 0,\n                tasks_done: 0\n            };\n        }\n        \n        // Only count as an assigned task if the status is NOT 'move'\n        if (status !== 'move') {\n            performancePerPerson[assignedTo].tasks_assigned++;\n        }\n        \n        performancePerPerson[assignedTo].hours_spent += hoursSpentPerTask;\n        performancePerPerson[assignedTo].estimated_hours += (task['Initial Estimate'] || 0);\n        \n        if (status === 'done' || status === 'complete') {\n            performancePerPerson[assignedTo].tasks_done++;\n        }\n    }\n}\n\n// Calculate key metrics\nconst overallCompletionRate = (totalTasks > 0) ? (totalCompleted / totalTasks) * 100 : 0;\nconst overallEfficiency = (totalEstimatedHours > 0) ? (totalHoursSpent / totalEstimatedHours) * 100 : 0;\n\n// Prepare final output\nconst finalResult = {\n    overall_summary: {\n        total_tasks: totalTasks,\n        completed_tasks: totalCompleted,\n        in_progress_tasks: totalInProgress,\n        moved_tasks: totalMove,\n        total_estimated_hours: totalEstimatedHours,\n        total_hours_spent: totalHoursSpent,\n        overall_completion_rate: overallCompletionRate.toFixed(2) + '%',\n        overall_efficiency: overallEfficiency.toFixed(2) + '%'\n    },\n    performance_by_person: Object.keys(performancePerPerson).map(name => {\n        const personData = performancePerPerson[name];\n        const personCompletionRate = (personData.tasks_assigned > 0) ? (personData.tasks_done / personData.tasks_assigned) * 100 : 0;\n        const personEfficiency = (personData.estimated_hours > 0) ? (personData.hours_spent / personData.estimated_hours) * 100 : 0;\n        \n        // คำนวณ Participation Rate\n        const participationRate = (totalTasks > 0) ? (personData.tasks_assigned / totalTasks) * 100 : 0;\n\n        return {\n            name: name,\n            ...personData,\n            completion_rate: personCompletionRate.toFixed(2) + '%',\n            efficiency: personEfficiency.toFixed(2) + '%',\n            participation_rate: participationRate.toFixed(2) + '%'\n        };\n    })\n};\n\nreturn [{ data: finalResult }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -448
+      ],
+      "id": "04ccdacf-dbe0-4b48-9499-845ac6b4ee49",
+      "name": "Sumary Performance for each one1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Function node in n8n\n// Input: $input.all()\n// Output: summary 5 วันของสัปดาห์ล่าสุด + completion rate\n\nconst tasks = $input.all().map(item => item.json);\n\n// Step 1: กรอง tasks ที่มี DueDate ที่ถูกต้องและหา DueDate ล่าสุด\nconst validTasks = tasks.filter(t => t.DueDate);\nlet latestDue = null;\nif (validTasks.length > 0) {\n    latestDue = new Date(Math.max(...validTasks.map(t => new Date(t.DueDate))));\n}\n\n// Step 2: กรอง tasks เฉพาะสัปดาห์ล่าสุดที่มี DueDate ตรงกับ latestDue และมี ID ที่ไม่ว่าง\nconst latestTasks = validTasks.filter(t => {\n    return new Date(t.DueDate).getTime() === latestDue.getTime() && t.ID && t.ID.trim() !== '';\n});\n\n// Step 3: เตรียม summary รายวัน (5 วัน)\nlet summary = {\n    \"Day 1\": 0,\n    \"Day 2\": 0,\n    \"Day 3\": 0,\n    \"Day 4\": 0,\n    \"Day 5\": 0\n};\n\n// Step 4: total_task คือจำนวน task ทั้งหมดที่ผ่านการกรองใน latestTasks\nconst totalTask = latestTasks.length;\nlet completedTask = 0;\n\n// Step 5: นับงานที่เสร็จตาม logic day\nfor (const t of latestTasks) {\n    const status = (t.STATUS || \"\").toLowerCase();\n\n    if (status === \"done\" || status === \"complete\" || status === \"not-pass\") {\n        let lastDay = null;\n        for (let d = 5; d >= 1; d--) {\n            const dayKey = `Day ${d}`;\n            if (Number(t[dayKey]) > 0) {\n                lastDay = dayKey;\n                break;\n            }\n        }\n        if (lastDay) {\n            summary[lastDay] += 1;\n            completedTask++;\n        }\n    }\n}\n\n// Step 6: return ให้ n8n\nlet result = Object.entries(summary).map(([day, count]) => {\n    return {\n        json: {\n            day,\n            tasksDone: count\n        }\n    };\n});\n\n// Step 7: เพิ่ม total / completion rate\nresult.push({\n    json: {\n        total_task: totalTask,\n        completed_task: completedTask,\n        completion_rate: totalTask > 0 ? completedTask / totalTask : 0\n    }\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -256
+      ],
+      "id": "82a29194-e280-466c-a030-f9542c3436fe",
+      "name": "Sumary Performance for each one2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "request-stat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -512
+      ],
+      "id": "dea5f3a5-d56b-4c53-82bc-fae88465575c",
+      "name": "Webhook1",
+      "webhookId": "fda09353-7aa0-49c1-b4aa-e108dc7173df"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1232,
+        -368
+      ],
+      "id": "17feae87-c4d5-4278-9fbe-729533104657",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1440,
+        -368
+      ],
+      "id": "929459de-a825-4cec-bf6c-881ae5924404",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        -368
+      ],
+      "id": "ced60015-1b48-4962-9bd4-21867a5eeea7",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull by Range": {
+      "main": [
+        [
+          {
+            "node": "Sumary Performance for each one1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sumary Performance for each one2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Pull by Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sumary Performance for each one1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sumary Performance for each one2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a1c0f4ef-79b0-49fc-bed0-fc13b38d0731",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0e48f0a6b7180ae77b3a0f9119cb1797ee2837c5f69c99a729081e6052eb38e"
+  },
+  "id": "ZSZAI6ga4L2k64pf",
+  "tags": []
+}
