@@ -1,0 +1,906 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1088,
+        352
+      ],
+      "id": "2aec18f8-96c6-4563-b437-572367889c04",
+      "name": "When chat message received",
+      "webhookId": "804b11a6-d677-448e-a9d5-939c35f9d07b"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Call this tool to search for a recipe.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "abstract-only",
+          "mode": "list",
+          "cachedResultName": "abstract-only"
+        },
+        "topK": 120,
+        "options": {
+          "pineconeNamespace": "filtered-doc"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        1136
+      ],
+      "id": "493d3db4-af34-454d-b6c8-197fc5a92101",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "1D2ZFv3fPnTegr5T",
+          "name": "PineconeApi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        16,
+        1344
+      ],
+      "id": "9fd28d22-82f7-414e-802b-b70668d8ae79",
+      "name": "Embeddings Google Gemini2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "w7fFZ5sVSv54rApP",
+          "name": "Google Gemini(PaLM) Api account SUNO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Call this tool to search for a recipe.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "part5-only",
+          "mode": "list",
+          "cachedResultName": "part5-only"
+        },
+        "topK": 100,
+        "options": {
+          "pineconeNamespace": "filtered-doc"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -736,
+        480
+      ],
+      "id": "b5bd012a-d957-416e-a2a1-b32d72357347",
+      "name": "Pinecone Vector Store2",
+      "credentials": {
+        "pineconeApi": {
+          "id": "1D2ZFv3fPnTegr5T",
+          "name": "PineconeApi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        688
+      ],
+      "id": "92f40de7-41ea-4f3b-a64e-2d4b149e14ff",
+      "name": "Embeddings Google Gemini3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "w7fFZ5sVSv54rApP",
+          "name": "Google Gemini(PaLM) Api account SUNO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"โปรดพิจารณาหัวข้อวิทยานิพนธ์และคำอธิบายคร่าวๆ ของวิทยานิพนธ์ที่เสนอมานี้: ชื่อหัวข้อ {{ $('Webhook1').item.json.body.topic }}\n\n\nให้คุณทำการเปรียบเทียบหัวข้อดังกล่าวกับบทคัดย่อของงานวิจัยทั้งหมดที่ได้รับมาจากการเรียกใช้ Tool pinecone_vector_store1 (ข้อมูลในนี้เป็นรูปแบบที่ต้อง embedding ก่อน)\n\nข้อกำหนดในการทำงาน:\n\nการเปรียบเทียบ: ให้วิเคราะห์เฉพาะความคล้ายคลึงระหว่างหัวข้อและคำอธิบายที่เสนอมากับส่วนที่เป็น \"บทคัดย่อ\" และ \"คำสำคัญ\" ของงานวิจัยที่ได้รับมาเท่านั้น \n\nการจัดการข้อมูลซ้ำ: หากมี record ที่มี Metadata UUID เหมือนกัน ให้ถือว่าเป็นงานวิจัยชิ้นเดียวกันแต่ถูกแยก Chunk ไว้เท่านั้น\n\nการวิเคราะห์ความซ้ำซ้อนอย่างเข้มงวด: ชี้ให้เห็นถึงประเด็นที่อาจมีความซ้ำซ้อนกันอย่างชัดเจนระหว่างหัวข้อที่เสนอมากับงานวิจัยเก่า โดยต้องพิจารณาจาก 'แก่นหลักของปัญหา' ที่งานวิจัยแต่ละชิ้นพยายามแก้ไข และต้องเป็นงานที่มีขอบเขตและเป้าหมายหลักคล้ายกันเท่านั้น ต้องห้ามพิจารณาความคล้ายคลึงจากฟังก์ชันการทำงานย่อยๆ เช่น การจัดการข้อมูล, การจัดตาราง, การทำเว็บไซต์, การแจ้งเตือน,ระบบค้นหา, หรือกระบวนการพัฒนาทั่วไป (เช่น การวางแผน การตั้งเป้าหมาย การจัดการข้อมูล อำนวยความสะดวกในการจัดการข้อมูล และการให้บริการ หรือการเพิ่มประสิทธิภาพ) หากแก่นหลักของปัญหาที่แก้ไขนั้นแตกต่างกันโดยสิ้นเชิง และถ้าชื่อไม่เกี่ยวข้องก็ไม่ต้องเอามา\n\nสำหรับ tid (id ของอาจารย์) ให้เอามาจากการเทียบชื่ออาจารย์ที่ปรึกษาที่เจอในงาน นำมาเทียบกับ {{ $json.teacher }} และ {{ $json.tid }} เรียงตามลำดับ\n\n\nการหา match_teacher: หาอาจารย์ที่ปรึกษาโครงงานที่เหมาะกับหัวข้อที่เสนอที่สุด ส่วนนี้ไม่จำเป็นต้องเข้มงวดเหมือนการวิเคราะห์ความซ้ำซ้อน(สามารถพิจารณาได้จากหลายๆ ด้าน ไม่จำเป็นต้องมาจากแก่นหลักของปัญหาอย่างเดียว ความเชี่ยวชาญของอาจารย์แต่ละท่านสามารถประกอบได้จากบทคัดย่อของงานที่อาจารย์ท่านนั้นๆ ได้เป็นที่ปรึกษา) ช่วยฉันวิเคราะห์หน่อยว่าจากงานที่เคยปรึกษาที่อยู่ใน vector database ของอาจารย์แต่ละท่านแล้ว ใครน่าจะเชี่ยวชาญและสนใจหัวข้อของฉัน โดยที่ต้องมีผลลัพธ์ออกมาอย่างน้อย 1 คน\n\n\nรูปแบบการตอบกลับ:\n\nโปรดตอบกลับเป็นรูปแบบ JSON Array โดยแต่ละ Element ใน Array จะเป็น Object ที่มีโครงสร้างดังนี้:\n\n'''\nJSON\n\n[\n  {\n    \"topic\": \"ชื่อหัวข้อของงานวิจัย\",\n    \"uuid\": \"UUID ของงานวิจัย (UUID เดียวกันคืองานตัวเดียวกัน)\",\n    \"reason\": \"เหตุผลประกอบสั้นๆ (สรุปความเหมือนที่พบจากการเปรียบเทียบ)\",\n    \"tid\": id ของอาจารย์\n  },\n  {\n    \"topic\": \"ชื่อหัวข้อของงานวิจัย\",\n    \"uuid\": \"UUID ของงานวิจัย (UUID เดียวกันคืองานตัวเดียวกัน)\",\n    \"reason\": \"เหตุผลประกอบสั้นๆ (สรุปความเหมือนที่พบจากการเปรียบเทียบ)\",\n    \"tid\": id ของอาจารย์\n  },\n  {\n    \"match_teacher\":[\n      {\n        \"name\": \"อ.นัด (ชื่อของอาจารย์ที่เหมาะสมจะเป็นที่ปรึกษาให้กับหัวข้อที่เสนอ)\",\n        \"tid\": id ของอาจารย์,\n        \"reason\": \"เหตุผลประกอบสั้นๆ (สรุปความเหมือนที่พบจากการเปรียบเทียบ)\"\n      },\n      {\n        \"name\": \"อ.บุ๋ม (ว่าทำไมอาจารย์คนนี้ถึงมีแนวโน้มที่จะสนใจหรือมีความเหมาะสม)\",\n        \"tid\": id ของอาจารย์,\n        \"reason\": \"เหตุผลประกอบสั้นๆ (ว่าทำไมอาจารย์คนนี้ถึงมีแนวโน้มที่จะสนใจหรือมีความเหมาะสม)\"\n      }\n    ]\n  }\n]\n\n'''\n\nข้อจำกัด:\nต้องเรียกใช้ Tool pinecone_vector_store1 เสมอ!\n\nห้ามใช้ข้อมูลจากแหล่งอื่นนอกเหนือจากที่ได้รับจากการเรียกใช้ Tool pinecone_vector_store1 โดยเด็ดขาด\n\noutput JSON ต้องออกมาให้ครบและถูกต้องตาม format\n\nหากไม่พบงานที่ซ้ำคล้ายในระดับที่กำหนด ให้ตอบกลับเป็น JSON Array ว่างเปล่า []\n\nKey ใน JSON Object ต้องเป็นภาษาอังกฤษ และ Value ต้องเป็นภาษาไทย\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -160,
+        912
+      ],
+      "id": "933e8ec2-bd28-4c4b-ae66-d6193798e420",
+      "name": "AI ตรวจสอบความซ้ำคล้าย"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"โปรดพิจารณาหัวข้อโครงการใหม่ที่เสนอ:ชื่อโครงงาน {{ $json.body.topic }}\nให้คุณทำการเปรียบเทียบหัวข้อดังกล่าวกับบทคัดย่อของงานวิจัยทั้งหมดที่ได้รับมาจากการเรียกใช้ Tool pinecone_vector_store2\n\nข้อกำหนดในการทำงาน:\n\nการเปรียบเทียบเพื่อ match: ให้วิเคราะห์เฉพาะความคล้ายคลึงระหว่างหัวข้อที่เสนอมากับส่วนที่เป็น \"บทคัดย่อ\" ของงานวิจัยที่ได้รับมาเท่านั้น ห้ามพิจารณาจาก \"บทที่ 5\"\n\nการจัดการข้อมูลซ้ำ: หากมี record ที่มี Metadata UUID เหมือนกัน ให้ถือว่าเป็นงานวิจัยชิ้นเดียวกันแต่ถูกแยก Chunk ไว้เท่านั้น\n\nการวิเคราะห์เชิงลึก: หากพบข้อมูลที่เกี่ยวข้อง ให้วิเคราะห์เฉพาะส่วนที่เป็น \"บทที่ 5 สรุปและข้อเสนอแนะ\" ของงานวิจัยเหล่านั้นเท่านั้น\n\nการสังเคราะห์ข้อมูล:\n\nrecommendations: รวบรวม \"ปัญหาที่พบ\" และ \"ข้อเสนอแนะ\" ที่สามารถนำมาปรับใช้ได้จากงานเก่า\n\nadditional_work: สรุป \"ข้อเสนอแนะสำหรับการวิจัยในอนาคต\" ที่ระบุในงานวิจัยเก่า โดยต้องเป็นสิ่งที่สามารถนำมาต่อยอดเป็นงานใหม่ได้จริง\n\nการให้คำแนะนำเชิงลึก: สังเคราะห์ข้อมูลที่ได้ทั้งหมดเพื่อสร้างคำแนะนำสำหรับโครงการใหม่ที่เสนอ โดยให้แยกเป็น 2 ส่วนดังนี้:\n\nrecommendations: สรุปข้อเสนอแนะเชิงลึกจากงานเก่าที่สามารถนำมาปรับใช้ได้แบบสั้นๆ ไม่ชี้นำจนเกินไป\n\nadditional_work: สรุปสิ่งที่ควรเพิ่มเติมในงานของคุณ โดยต้องมาจาก \"ข้อเสนอแนะสำหรับการวิจัยในอนาคต\" ในบทที่ 5 ของงานวิจัยเก่าเท่านั้น ถ้าไม่พบข้อมูลที่เฉพาะเจาะจง ห้ามสร้างคำตอบจากความรู้ทั่วไปโดยเด็ดขาด\n\nรูปแบบการตอบกลับ:\n\nโปรดตอบกลับเป็นรูปแบบ JSON Object เพียงรายการเดียว ที่มีโครงสร้างดังนี้:\n\nJSON\n\n{\n  \"recommendations\": \"สรุปคำแนะนำเชิงลึกสำหรับงานใหม่ โดยสังเคราะห์จากทุกงานวิจัยที่เกี่ยวข้อง\",\n  \"additional_work\": \"สรุปสิ่งที่ควรเพิ่มเติมในงานของคุณ โดยสังเคราะห์จากข้อเสนอแนะสำหรับการวิจัยในอนาคตของงานที่เกี่ยวข้อง\"\n}\n\nข้อจำกัด:\n\nห้ามใช้ข้อมูลจากแหล่งอื่นนอกเหนือจากที่ได้รับจากการเรียกใช้ Tool pinecone_vector_store2 โดยเด็ดขาด\n\nหากไม่พบอมูลที่เกี่ยวข้อง ให้ตอบกลับเป็น JSON Object เพียงรายการเดียว ที่มีโครงสร้างดังนี้:\n\nJSON\n\n{\n  \"recommendations\": \"ไม่มี\",\n  \"additional_work\": \"ไม่มี\"\n}\n\n\nKey ใน JSON Object ต้องเป็นภาษาอังกฤษ และ Value ต้องเป็นภาษาไทย\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -832,
+        256
+      ],
+      "id": "4909f46c-f5ac-4dcd-b502-d64dc1dfaa69",
+      "name": "AI คำแนะนำ"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.output;\nconst jsonString = input.replace(/```json\\n|\\n```/g, '');\nconst parsedJson = JSON.parse(jsonString);\n\nreturn [{ json: { result: parsedJson } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        1120
+      ],
+      "id": "ef984952-ccc5-4ac4-91aa-e9cacd90aebd",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.output;\nconst jsonString = input.replace(/```json\\n|\\n```/g, '');\nconst parsedJson = JSON.parse(jsonString);\n\nreturn [{ json: { result: parsedJson } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        256
+      ],
+      "id": "58dacd80-6238-4874-8e26-0310d2b2781a",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "model-a-url",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        1120
+      ],
+      "id": "e150fe1a-3ad9-4601-a01a-f9be2024c16e",
+      "name": "Webhook1",
+      "webhookId": "fda09353-7aa0-49c1-b4aa-e108dc7173df"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recommendation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        160
+      ],
+      "id": "9fc307b4-1f32-4a02-8dc8-6cfc58abbf0e",
+      "name": "Webhook2",
+      "webhookId": "f39eaa0d-a140-45be-8ebc-549a89deadf3"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.result }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        528,
+        1120
+      ],
+      "id": "efe96a33-ab55-4fc6-8239-27f9d7368cce",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "19YUQdnVSDpsyjAE3i8rtCaOK9Eh-D8oVy6_Rsb7BCQY",
+          "mode": "list",
+          "cachedResultName": "ชื่ออาจารย์",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19YUQdnVSDpsyjAE3i8rtCaOK9Eh-D8oVy6_Rsb7BCQY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "ชีต1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19YUQdnVSDpsyjAE3i8rtCaOK9Eh-D8oVy6_Rsb7BCQY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -864,
+        1120
+      ],
+      "id": "4be68916-c5f7-4106-99e6-2c96b1008902",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VLHxNrEZtmHeXp80",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "=\n            {\n              \"teacher\": \"{{ $json[\"ชื่อ-นามสกุล\"] }}\",\n              \"tid\": {{ $json.row_number - 1 }}\n            }\n\n  ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -640,
+        1120
+      ],
+      "id": "22760420-9885-48c1-a9bf-5f30ccdb5112",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "teacher"
+            },
+            {
+              "fieldToAggregate": "tid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        1120
+      ],
+      "id": "a375ae3e-6dc3-411b-9bd1-304f84da6d78",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1120
+      ],
+      "id": "eb53848b-22eb-4a1b-9d06-04307aa46513",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        1136
+      ],
+      "id": "844e482d-8dd0-4c35-aa38-c7744f612e6d",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "nkvJ9KdmD5vcGLAL",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        480
+      ],
+      "id": "3a15ba7e-4830-4531-8a2c-92406eeb9108",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "nkvJ9KdmD5vcGLAL",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -144,
+        256
+      ],
+      "id": "02eed4e2-e22d-4577-8ad9-27806a4185da",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        80,
+        256
+      ],
+      "id": "878d2665-5325-49f1-8177-0c19eeb296a8",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Call this tool to search for a recipe.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "abstract-only",
+          "mode": "list",
+          "cachedResultName": "abstract-only"
+        },
+        "topK": 120,
+        "options": {
+          "pineconeNamespace": "filtered-doc"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        1776
+      ],
+      "id": "612aed5d-abef-4dd7-8335-0b83db7bdece",
+      "name": "Pinecone Vector Store3",
+      "credentials": {
+        "pineconeApi": {
+          "id": "1D2ZFv3fPnTegr5T",
+          "name": "PineconeApi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        16,
+        1984
+      ],
+      "id": "e9d395ad-1199-4dbc-b095-0af1b95242c5",
+      "name": "Embeddings Google Gemini4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "w7fFZ5sVSv54rApP",
+          "name": "Google Gemini(PaLM) Api account SUNO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"โปรดพิจารณาหัวข้อวิทยานิพนธ์และคำอธิบายคร่าวๆ ของวิทยานิพนธ์ที่เสนอมานี้: ชื่อหัวข้อ {{ $('Webhook3').item.json.body.topic }}\n\n\nให้คุณทำการเปรียบเทียบหัวข้อดังกล่าวกับบทคัดย่อของงานวิจัยทั้งหมดที่ได้รับมาจากการเรียกใช้ Tool pinecone_vector_store3 (ข้อมูลในนี้เป็นรูปแบบที่ต้อง embedding ก่อน)\n\nข้อกำหนดในการทำงาน:\n\nการเปรียบเทียบ: ให้วิเคราะห์เฉพาะความคล้ายคลึงระหว่างหัวข้อและคำอธิบายที่เสนอมากับส่วนที่เป็น \"บทคัดย่อ\" และ \"คำสำคัญ\" ของงานวิจัยที่ได้รับมาเท่านั้น \n\nการจัดการข้อมูลซ้ำ: หากมี record ที่มี Metadata UUID เหมือนกัน ให้ถือว่าเป็นงานวิจัยชิ้นเดียวกันแต่ถูกแยก Chunk ไว้เท่านั้น\n\nการวิเคราะห์ความซ้ำซ้อนอย่างเข้มงวด: ชี้ให้เห็นถึงประเด็นที่อาจมีความซ้ำซ้อนกันอย่างชัดเจนระหว่างหัวข้อที่เสนอมากับงานวิจัยเก่า โดยต้องพิจารณาจาก 'แก่นหลักของปัญหา' ที่งานวิจัยแต่ละชิ้นพยายามแก้ไข และต้องเป็นงานที่มีขอบเขตและเป้าหมายหลักคล้ายกันเท่านั้น ต้องห้ามพิจารณาความคล้ายคลึงจากฟังก์ชันการทำงานย่อยๆ เช่น การจัดการข้อมูล, การจัดตาราง, การทำเว็บไซต์, การแจ้งเตือน,ระบบค้นหา, หรือกระบวนการพัฒนาทั่วไป (เช่น การวางแผน การตั้งเป้าหมาย การจัดการข้อมูล อำนวยความสะดวกในการจัดการข้อมูล และการให้บริการ หรือการเพิ่มประสิทธิภาพ) หากแก่นหลักของปัญหาที่แก้ไขนั้นแตกต่างกันโดยสิ้นเชิง และถ้าชื่อไม่เกี่ยวข้องก็ไม่ต้องเอามา\n\nสำหรับ tid (id ของอาจารย์) ให้เอามาจากการเทียบชื่ออาจารย์ที่ปรึกษาที่เจอในงาน นำมาเทียบกับ {{ $json.teacher }} และ {{ $json.tid }} เรียงตามลำดับ\n\n\nการหา match_teacher: หาอาจารย์ที่ปรึกษาโครงงานที่เหมาะกับหัวข้อที่เสนอที่สุด ส่วนนี้ไม่จำเป็นต้องเข้มงวดเหมือนการวิเคราะห์ความซ้ำซ้อน(สามารถพิจารณาได้จากหลายๆ ด้าน ไม่จำเป็นต้องมาจากแก่นหลักของปัญหาอย่างเดียว ความเชี่ยวชาญของอาจารย์แต่ละท่านสามารถประกอบได้จากบทคัดย่อของงานที่อาจารย์ท่านนั้นๆ ได้เป็นที่ปรึกษา) ช่วยฉันวิเคราะห์หน่อยว่าจากงานที่เคยปรึกษาที่อยู่ใน vector database ของอาจารย์แต่ละท่านแล้ว ใครน่าจะเชี่ยวชาญและสนใจหัวข้อของฉัน โดยที่ต้องมีผลลัพธ์ออกมาอย่างน้อย 1 คน\n\n\nรูปแบบการตอบกลับ:\n\nโปรดตอบกลับเป็นรูปแบบ JSON Array โดยแต่ละ Element ใน Array จะเป็น Object ที่มีโครงสร้างดังนี้:\n\n'''\nJSON\n\n[\n  {\n    \"topic\": \"ชื่อหัวข้อของงานวิจัย\",\n    \"uuid\": \"UUID ของงานวิจัย (UUID เดียวกันคืองานตัวเดียวกัน)\",\n    \"reason\": \"เหตุผลประกอบสั้นๆ (สรุปความเหมือนที่พบจากการเปรียบเทียบ)\",\n    \"tid\": id ของอาจารย์\n  },\n  {\n    \"topic\": \"ชื่อหัวข้อของงานวิจัย\",\n    \"uuid\": \"UUID ของงานวิจัย (UUID เดียวกันคืองานตัวเดียวกัน)\",\n    \"reason\": \"เหตุผลประกอบสั้นๆ (สรุปความเหมือนที่พบจากการเปรียบเทียบ)\",\n    \"tid\": id ของอาจารย์\n  },\n  {\n    \"match_teacher\":[\n      {\n        \"name\": \"อ.นัด (ชื่อของอาจารย์ที่เหมาะสมจะเป็นที่ปรึกษาให้กับหัวข้อที่เสนอ)\",\n        \"tid\": id ของอาจารย์,\n        \"reason\": \"เหตุผลประกอบสั้นๆ (สรุปความเหมือนที่พบจากการเปรียบเทียบ)\"\n      },\n      {\n        \"name\": \"อ.บุ๋ม (ว่าทำไมอาจารย์คนนี้ถึงมีแนวโน้มที่จะสนใจหรือมีความเหมาะสม)\",\n        \"tid\": id ของอาจารย์,\n        \"reason\": \"เหตุผลประกอบสั้นๆ (ว่าทำไมอาจารย์คนนี้ถึงมีแนวโน้มที่จะสนใจหรือมีความเหมาะสม)\"\n      }\n    ]\n  }\n]\n\n'''\n\nข้อจำกัด:\nต้องเรียกใช้ Tool pinecone_vector_store3 เสมอ!\n\nห้ามใช้ข้อมูลจากแหล่งอื่นนอกเหนือจากที่ได้รับจากการเรียกใช้ Tool pinecone_vector_store3 โดยเด็ดขาด\n\noutput JSON ต้องออกมาให้ครบและถูกต้องตาม format\n\nหากไม่พบงานที่ซ้ำคล้ายในระดับที่กำหนด ให้ตอบกลับเป็น JSON Array ว่างเปล่า []\n\nKey ใน JSON Object ต้องเป็นภาษาอังกฤษ และ Value ต้องเป็นภาษาไทย\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -160,
+        1552
+      ],
+      "id": "f6e0003c-a46b-4755-aa5b-ae9d6dfd752d",
+      "name": "AI ตรวจสอบความซ้ำคล้าย1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.output;\nconst jsonString = input.replace(/```json\\n|\\n```/g, '');\nconst parsedJson = JSON.parse(jsonString);\n\nreturn [{ json: { result: parsedJson } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        1760
+      ],
+      "id": "257bc5e4-6c80-4fae-9d5e-67ba58c8670d",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "model-b-url",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        1760
+      ],
+      "id": "cac77c31-da9b-4440-ac5d-4f0acc907f6d",
+      "name": "Webhook3",
+      "webhookId": "fda09353-7aa0-49c1-b4aa-e108dc7173df"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.result }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        528,
+        1760
+      ],
+      "id": "3e774e2c-03c8-44aa-ad70-109a4c8e10ca",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "19YUQdnVSDpsyjAE3i8rtCaOK9Eh-D8oVy6_Rsb7BCQY",
+          "mode": "list",
+          "cachedResultName": "ชื่ออาจารย์",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19YUQdnVSDpsyjAE3i8rtCaOK9Eh-D8oVy6_Rsb7BCQY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "ชีต1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19YUQdnVSDpsyjAE3i8rtCaOK9Eh-D8oVy6_Rsb7BCQY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -864,
+        1760
+      ],
+      "id": "84082aac-f2c8-4fdc-bcfa-e85c0cd0a32e",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VLHxNrEZtmHeXp80",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "=\n            {\n              \"teacher\": \"{{ $json[\"ชื่อ-นามสกุล\"] }}\",\n              \"tid\": {{ $json.row_number - 1 }}\n            }\n\n  ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -640,
+        1760
+      ],
+      "id": "ef97bdb0-00dc-483c-bdea-402e88dbbbcd",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "teacher"
+            },
+            {
+              "fieldToAggregate": "tid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        1760
+      ],
+      "id": "9fb46b6d-45a7-47b1-b563-4bd01b2ba551",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1760
+      ],
+      "id": "0f47e002-c58b-4b3a-843b-209d96339635",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4-fast",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        1776
+      ],
+      "id": "d5a67c2c-fc10-4773-ba84-ae54234a1e9c",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "nkvJ9KdmD5vcGLAL",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI คำแนะนำ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI ตรวจสอบความซ้ำคล้าย",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI คำแนะนำ",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI ตรวจสอบความซ้ำคล้าย": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI คำแนะนำ": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI ตรวจสอบความซ้ำคล้าย",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI ตรวจสอบความซ้ำคล้าย",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI คำแนะนำ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "AI คำแนะนำ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store3": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI ตรวจสอบความซ้ำคล้าย1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini4": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store3",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI ตรวจสอบความซ้ำคล้าย1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook3": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook2": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "AI ตรวจสอบความซ้ำคล้าย1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI ตรวจสอบความซ้ำคล้าย1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f7a73b15-b206-42f4-8c93-ac552f24c680",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0e48f0a6b7180ae77b3a0f9119cb1797ee2837c5f69c99a729081e6052eb38e"
+  },
+  "id": "TOGPJ88wu3qPku9H",
+  "tags": []
+}
