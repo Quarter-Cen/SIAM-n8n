@@ -9,6 +9,3 @@ ENV N8N_PROTOCOL="https"
 
 # 🛑 Copy Workflows ทั้งหมดเข้าสู่ n8n Data Folder
 COPY workflows /home/node/.n8n/workflows
-
-# คำสั่งรัน n8n Service
-CMD ["n8n"]
